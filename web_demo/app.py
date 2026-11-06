@@ -25,9 +25,6 @@ st.set_page_config(
     initial_sidebar_state = "collapsed",
 )
 
-# ── project imports ────────────────────────────────────────────────────────── #
-from envs.gym_env     import SUPPORTED_ENVS
-
 if TYPE_CHECKING:
     from web_demo.episode import EpisodeRunner
 
@@ -35,7 +32,7 @@ if TYPE_CHECKING:
 #  Constants
 # ══════════════════════════════════════════════════════════════════════════════
 
-ENVS   = [env for env in SUPPORTED_ENVS if env != "MountainCar-v0"]
+ENVS = ["CartPole-v1", "Acrobot-v1", "LunarLander-v3"]
 MODE_DISPLAY = {
     "baseline":       "Baseline PPO",
     "affect_reward":  "Affect Reward",
