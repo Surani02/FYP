@@ -3,9 +3,12 @@ Run from Research_Implementation/:
     streamlit run web_demo/app.py
 """
 
+from __future__ import annotations
+
 import os
 import sys
 import time
+from typing import TYPE_CHECKING
 
 # ── path setup ────────────────────────────────────────────────────────────── #
 _ROOT = getattr(sys, "_MEIPASS", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -23,15 +26,22 @@ st.set_page_config(
 )
 
 # ── project imports ────────────────────────────────────────────────────────── #
-from web_demo.episode import EpisodeRunner, MODE_DISPLAY, ACTION_LABELS
 from envs.gym_env     import SUPPORTED_ENVS
-from train_full_model import is_success
+
+if TYPE_CHECKING:
+    from web_demo.episode import EpisodeRunner
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  Constants
 # ══════════════════════════════════════════════════════════════════════════════
 
 ENVS   = [env for env in SUPPORTED_ENVS if env != "MountainCar-v0"]
+MODE_DISPLAY = {
+    "baseline":       "Baseline PPO",
+    "affect_reward":  "Affect Reward",
+    "appraisal_only": "Appraisal Only",
+    "full":           "Full AC-PPO",
+}
 MODES  = list(MODE_DISPLAY.keys())
 SEEDS  = [42, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
@@ -55,6 +65,20 @@ MODE_BADGE_COLOR = {
     "appraisal_only": "#3b82f6",
     "full":           "#10b981",
 }
+
+
+def _episode_runner_class():
+    """Load the model stack only when an episode is requested."""
+    from web_demo.episode import EpisodeRunner
+
+    return EpisodeRunner
+
+
+def _is_success(*args, **kwargs):
+    """Load training helpers only when an episode has completed."""
+    from train_full_model import is_success
+
+    return is_success(*args, **kwargs)
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  Custom CSS
@@ -415,8 +439,8 @@ def render_summary(runner: EpisodeRunner):
     m      = runner._last_metrics
     ep_r   = runner.ep_reward
     steps  = runner.step_count
-    succ   = bool(is_success(runner.env_name, ep_r, steps,
-                             runner._terminated, runner._truncated))
+    succ   = bool(_is_success(runner.env_name, ep_r, steps,
+                              runner._terminated, runner._truncated))
     flags  = runner.flags
     css    = "" if succ else "summary-fail"
     icon   = "✅ SUCCESS" if succ else "❌ Failed"
@@ -483,6 +507,8 @@ def tab_single_demo():
             unsafe_allow_html=True,
         )
         return
+
+    EpisodeRunner = _episode_runner_class()
 
     # Create runner
     with st.spinner("Loading checkpoints …"):
@@ -563,6 +589,8 @@ def tab_comparison():
             unsafe_allow_html=True,
         )
         return
+
+    EpisodeRunner = _episode_runner_class()
 
     # ── load both runners ──
     with st.spinner("Loading checkpoints for both models …"):
